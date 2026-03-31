@@ -1,0 +1,847 @@
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+Name = "[NEW] DrayvenX",
+ToggleUIKeybind = "K"
+})
+
+local Tab = Window:CreateTab("Info")
+local down = false
+local HttpService = game:GetService("HttpService")
+local player = game.Players.LocalPlayer
+local FORMSPREE_ID = "mdkdrjdl"
+local fileName = "executor.getId"
+local cooldownSeconds = 300
+local lastSend = 0
+
+if isfile and isfile(fileName) then
+    local ok, content = pcall(readfile, fileName)
+    if ok and content then
+        local num = tonumber(content)
+        if num then lastSend = num end
+    end
+end
+
+local function requestExec(options)
+    if http_request then
+        return http_request(options)
+    elseif request then
+        return request(options)
+    elseif syn and syn.request then
+        return syn.request(options)
+    elseif fluxus and fluxus.request then
+        return fluxus.request(options)
+    else
+        return nil
+    end
+end
+
+local function sendFeedback(reason, sender)
+    local formData = {reason = reason, sender = sender, _subject = "Feedback", _format = "json"}
+    local body = ""
+    for k, v in pairs(formData) do
+        body = body .. string.format("%s=%s&", k, HttpService:UrlEncode(v))
+    end
+
+    local success, res = pcall(function()
+        return requestExec({
+            Url = "https://formspree.io/f/" .. FORMSPREE_ID,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/x-www-form-urlencoded",
+                ["Accept"] = "application/json"
+            },
+            Body = body
+        })
+    end)
+
+    if not success or not res then
+        return false, "no_network"
+    elseif res.StatusCode == 200 then
+        return true
+    else
+        return false, tostring(res.StatusCode)
+    end
+end
+
+Tab:CreateInput({
+    Name = "Your Feedback",
+    CurrentValue = "",
+    PlaceholderText = "Enter feedback reason...",
+    RemoveTextAfterFocusLost = false,
+    Flag = "InputReason",
+    Callback = function(Text)
+        getgenv().feedbackReason = Text
+    end,
+})
+
+Tab:CreateInput({
+    Name = "Email (If you would like to give feedback)",
+    CurrentValue = "",
+    PlaceholderText = "Optional email",
+    RemoveTextAfterFocusLost = false,
+    Flag = "InputEmail",
+    Callback = function(Text)
+        getgenv().feedbackEmail = Text
+    end,
+})
+
+local FeedbackButton = Tab:CreateButton({
+    Name = "Send",
+    Callback = function()
+if not down then
+        local now = os.time()
+        if now - lastSend < cooldownSeconds then
+            Rayfield:Notify({
+                Title = "Feedback",
+                Content = "You are sending too fast.",
+                Duration = 3
+            })
+            if FeedbackButton and type(FeedbackButton.Set) == "function" then pcall(function() FeedbackButton:Set("Too fast") end) end
+            task.wait(2)
+            if FeedbackButton and type(FeedbackButton.Set) == "function" then pcall(function() FeedbackButton:Set("Send") end) end
+            return
+        end
+
+        local reason = getgenv().feedbackReason or ""
+        if reason == "" then
+            Rayfield:Notify({
+                Title = "Feedback",
+                Content = "Please enter feedback reason.",
+                Duration = 3
+            })
+            if FeedbackButton and type(FeedbackButton.Set) == "function" then pcall(function() FeedbackButton:Set("No input") end) end
+            task.wait(2)
+            if FeedbackButton and type(FeedbackButton.Set) == "function" then pcall(function() FeedbackButton:Set("Send") end) end
+            return
+        end
+
+        local email = getgenv().feedbackEmail or ""
+        local pattern = "^[A-Za-z0-9._%%+%-]+@[A-Za-z0-9%-]+%.[A-Za-z][A-Za-z]+$"
+        if email ~= "" and not email:match(pattern) then
+            Rayfield:Notify({
+                Title = "Feedback",
+                Content = "Invalid email. Please fix or leave it empty.",
+                Duration = 3
+            })
+            if FeedbackButton and type(FeedbackButton.Set) == "function" then pcall(function() FeedbackButton:Set("Invalid email") end) end
+            task.wait(2)
+            if FeedbackButton and type(FeedbackButton.Set) == "function" then pcall(function() FeedbackButton:Set("Send") end) end
+            return
+        end
+
+        local sender = (email ~= "" and email:match(pattern)) and (email .. " (" .. player.Name .. ")") or player.Name
+
+        local ok, code = sendFeedback(reason, sender)
+        if ok then
+            Rayfield:Notify({
+                Title = "Feedback",
+                Content = "Feedback sent successfully!",
+                Duration = 3
+            })
+            if FeedbackButton and type(FeedbackButton.Set) == "function" then pcall(function() FeedbackButton:Set("Feedback sent!") end) end
+            lastSend = now
+            if writefile then pcall(function() writefile(fileName, tostring(now)) end) end
+        else
+            local msg = "Failed to send feedback. Try again later."
+            if code == "no_network" then
+                msg = "No internet connection detected."
+            elseif tonumber(code) then
+                msg = "Server returned error: " .. code
+            end
+
+            Rayfield:Notify({
+                Title = "Feedback",
+                Content = msg,
+                Duration = 3
+            })
+            if FeedbackButton and type(FeedbackButton.Set) == "function" then pcall(function() FeedbackButton:Set("Failed to send") end) end
+        end
+
+        task.wait(2)
+        if FeedbackButton and type(FeedbackButton.Set) == "function" then pcall(function() FeedbackButton:Set("Send") end) end
+else
+Rayfield:Notify({
+                Title = "Error",
+                Content = "No connection",
+                Duration = 3
+            })
+end
+    end,
+})
+
+if FeedbackButton and type(FeedbackButton.Set) == "function" then pcall(function() FeedbackButton:Set("Send") end) end
+
+
+local Tab = Window:CreateTab("Early access", 4483362458)
+
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local LP = Players.LocalPlayer
+local chars = workspace:WaitForChild("Characters")
+
+
+---
+
+-- FAST BREAK
+
+local gbt = require(
+RS.Systems.ItemsSystem.Libs.GetBreakingTime
+)
+
+local fbEnabled = false
+local oldBreak
+
+Tab:CreateToggle({
+Name = "FastBreak",
+CurrentValue = false,
+Flag = "FastBreakToggle",
+
+Callback = function(Value)  
+
+	if Value then  
+
+		if not fbEnabled then  
+
+			oldBreak = hookfunction(  
+				gbt,  
+				function(...)  
+					return 0  
+				end  
+			)  
+
+			fbEnabled = true  
+			print("FastBreak ON")  
+
+		end  
+
+	else  
+
+		if fbEnabled and oldBreak then  
+
+			hookfunction(gbt, oldBreak)  
+
+			fbEnabled = false  
+			print("FastBreak OFF")  
+
+		end  
+
+	end  
+
+end,
+
+})
+
+
+---
+
+-- ANTI FALL DAMAGE
+
+local FallRemote =
+RS.Systems.CombatSystem.Network.FallDamage
+
+local afdEnabled = false
+
+local oldNamecall
+oldNamecall = hookmetamethod(
+game,
+"__namecall",
+function(self,...)
+
+local method =  
+	getnamecallmethod()  
+
+	if method == "FireServer"  
+	and self == FallRemote  
+	and afdEnabled then  
+
+		return  
+
+	end  
+
+	return oldNamecall(self,...)  
+
+end
+
+)
+
+Tab:CreateToggle({
+Name = "Anti FallDamage",
+CurrentValue = false,
+Flag = "AntiFallDamage",
+
+Callback = function(Value)  
+	afdEnabled = Value  
+end,
+
+})
+
+
+---
+
+
+-- ANTI DROWN
+
+local DownRemote =
+game:GetService("ReplicatedStorage"):WaitForChild("Systems"):WaitForChild("CombatSystem"):WaitForChild("Network"):WaitForChild("DrownDamage")
+
+local adEnabled = false
+
+local oldNamecall
+oldNamecall = hookmetamethod(
+game,
+"__namecall",
+function(self,...)
+
+local method =  
+	getnamecallmethod()  
+
+	if method == "FireServer"  
+	and self == DownRemote  
+	and adEnabled then  
+
+		return  
+
+	end  
+
+	return oldNamecall(self,...)  
+
+end
+
+)
+
+Tab:CreateToggle({
+Name = "Anti Drown",
+CurrentValue = false,
+Flag = "AntiDrown",
+
+Callback = function(Value)  
+	adEnabled = Value  
+end,
+
+})
+
+---
+
+-- AUTO KILL (FAST VERSION)
+
+local attackRemote =
+RS:WaitForChild("Systems")
+:WaitForChild("ActionsSystem")
+:WaitForChild("Network")
+:WaitForChild("Attack")
+
+local protectedList = {}
+local hitTest = {}
+
+local running = false
+
+-- luôn lấy character mới
+local function getChar()
+
+return LP.Character  
+or LP.CharacterAdded:Wait()
+
+end
+
+
+---
+
+local function getFirstTarget()
+
+for _, char in ipairs(  
+	chars:GetChildren()  
+) do  
+
+	if char.Name ~= LP.Name then  
+
+		local plr =  
+		Players:FindFirstChild(  
+			char.Name  
+		)  
+
+		if plr  
+		and not protectedList[plr] then  
+
+			return plr, char  
+
+		end  
+
+	end  
+
+end
+
+end
+
+
+---
+
+local function startLoop()
+
+while running do      
+
+	local myChar = getChar()  
+
+	local myHRP =  
+	myChar:FindFirstChild(  
+		"HumanoidRootPart"  
+	)  
+
+	if not myHRP then  
+		RunService.Heartbeat:Wait()  
+		continue  
+	end      
+
+	local slot =  
+	myChar:GetAttribute(  
+		"ReplicatedHotbarSlot"  
+	)  
+
+	if not slot then  
+		RunService.Heartbeat:Wait()  
+		continue  
+	end      
+
+	local targetPlayer,  
+	targetChar =  
+	getFirstTarget()  
+
+	if not targetPlayer  
+	or not targetChar then  
+
+		RunService.Heartbeat:Wait()  
+		continue  
+
+	end      
+
+	local targetHRP =  
+	targetChar:FindFirstChild(  
+		"HumanoidRootPart"  
+	)  
+
+	if not targetHRP then  
+		RunService.Heartbeat:Wait()  
+		continue  
+	end      
+
+	-- teleport gần hơn  
+	myHRP.CFrame =  
+	targetHRP.CFrame  
+	* CFrame.new(0,0,-1.5)  
+
+	local oldHP =  
+	targetPlayer:GetAttribute(  
+		"Health"  
+	)  
+
+	-- ⚡ spam attack nhanh  
+	for i = 1,3 do  
+
+		pcall(function()  
+
+			attackRemote:InvokeServer(  
+				targetChar,  
+				slot  
+			)  
+
+		end)  
+
+	end  
+
+	local newHP =  
+	targetPlayer:GetAttribute(  
+		"Health"  
+	)  
+
+	if oldHP and newHP then      
+
+		if newHP >= oldHP then      
+
+			hitTest[targetPlayer] =  
+			(hitTest[targetPlayer] or 0) + 1      
+
+			if hitTest[targetPlayer] >= 5 then      
+
+				protectedList[targetPlayer] = true      
+				hitTest[targetPlayer] = nil      
+
+				task.delay(3,function()      
+
+					protectedList[targetPlayer] = nil      
+
+				end)      
+
+			end      
+
+		else      
+
+			hitTest[targetPlayer] = nil      
+
+		end      
+
+	end      
+
+	-- ⚡ dùng Heartbeat nhanh hơn task.wait()  
+	RunService.Heartbeat:Wait()  
+
+end
+
+end
+
+
+---
+
+Tab:CreateToggle({
+Name = "Auto Kill",
+CurrentValue = false,
+Flag = "AutoAttackFirst",
+
+Callback = function(Value)  
+
+	running = Value      
+
+	if running then      
+		task.spawn(startLoop)      
+	end      
+
+end,
+
+})
+
+--------------------------------------------------
+-- KILL AURA (NEAREST TARGET)
+--------------------------------------------------
+
+local auraEnabled = false
+
+-- khoảng cách đánh
+local auraRange = 50
+
+--------------------------------------------------
+-- LẤY PLAYER GẦN NHẤT
+--------------------------------------------------
+
+local function getNearestTarget()
+
+	local myChar = LP.Character
+	if not myChar then return end
+
+	local myHRP =
+	myChar:FindFirstChild(
+		"HumanoidRootPart"
+	)
+
+	if not myHRP then return end
+
+	local nearestChar = nil
+	local shortestDist = auraRange
+
+	for _, char in ipairs(
+		chars:GetChildren()
+	) do
+
+		if char.Name ~= LP.Name then
+
+			local hrp =
+			char:FindFirstChild(
+				"HumanoidRootPart"
+			)
+
+			if hrp then
+
+				local dist =
+				(myHRP.Position
+				- hrp.Position).Magnitude
+
+				if dist < shortestDist then
+
+					nearestChar = char
+					shortestDist = dist
+
+				end
+
+			end
+
+		end
+
+	end
+
+	return nearestChar
+
+end
+
+--------------------------------------------------
+-- LOOP ATTACK
+--------------------------------------------------
+
+task.spawn(function()
+
+	while true do
+
+		if auraEnabled then
+
+			local myChar =
+			LP.Character
+
+			if myChar then
+
+				local slot =
+				myChar:GetAttribute(
+					"ReplicatedHotbarSlot"
+				)
+
+				if slot then
+
+					local target =
+					getNearestTarget()
+
+					if target then
+
+						-- spam attack cực nhanh
+						for i = 1,5 do
+
+							pcall(function()
+
+								attackRemote:
+								InvokeServer(
+									target,
+									slot
+								)
+
+							end)
+
+						end
+
+					end
+
+				end
+
+			end
+
+		end
+
+		RunService.Heartbeat:Wait()
+
+	end
+
+end)
+
+--------------------------------------------------
+-- TOGGLE
+--------------------------------------------------
+
+Tab:CreateToggle({
+	Name = "Kill Aura",
+	CurrentValue = false,
+	Flag = "KillAura",
+
+	Callback = function(Value)
+
+		auraEnabled = Value
+
+	end,
+})
+
+--------------------------------------------------
+-- XRAY ORE (TOGGLE)
+--------------------------------------------------
+
+local BATCH = 10
+local DELAY = 0.2
+
+local OreColors = {
+	iron_ore = Color3.fromRGB(170,170,170),
+	gold_ore = Color3.fromRGB(255,215,0),
+	diamond_ore = Color3.fromRGB(0,255,255),
+	coal_ore = Color3.fromRGB(40,40,40)
+}
+
+local ores = {}
+local queue = {}
+local running = false
+local xrayEnabled = false
+
+--------------------------------------------------
+-- ADD HIGHLIGHT
+--------------------------------------------------
+
+local function add(part)
+
+	if not xrayEnabled then return end
+
+	if part:FindFirstChild("OreHL") then
+		return
+	end
+	
+	local color =
+	OreColors[part.MaterialVariant]
+
+	if not color then return end
+	
+	local hl = Instance.new("Highlight")
+
+	hl.Name = "OreHL"
+	hl.FillColor = color
+	hl.OutlineColor = color
+	hl.FillTransparency = 0.5
+
+	hl.Parent = part
+
+end
+
+--------------------------------------------------
+-- PROCESS BATCH
+--------------------------------------------------
+
+local function process()
+
+	if running
+	or not xrayEnabled then
+		return
+	end
+
+	running = true
+	
+	task.spawn(function()
+
+		local count = 0
+		
+		while #queue > 0
+		and count < BATCH
+		and xrayEnabled do
+
+			local part =
+			table.remove(queue, 1)
+			
+			if part
+			and part.Parent then
+
+				add(part)
+
+			end
+			
+			count += 1
+
+		end
+		
+		running = false
+		
+		if #queue > 0
+		and xrayEnabled then
+
+			task.delay(
+				DELAY,
+				process
+			)
+
+		end
+
+	end)
+
+end
+
+--------------------------------------------------
+-- REMOVE ALL XRAY
+--------------------------------------------------
+
+local function clearXray()
+
+	for _,v in ipairs(ores) do
+
+		if v
+		and v:FindFirstChild("OreHL") then
+
+			v.OreHL:Destroy()
+
+		end
+
+	end
+
+end
+
+--------------------------------------------------
+-- SCAN WORLD
+--------------------------------------------------
+
+local function scanWorld()
+
+	table.clear(ores)
+	table.clear(queue)
+
+	for _,v in ipairs(
+		workspace:GetDescendants()
+	) do
+
+		if v:IsA("BasePart") then
+
+			local mat =
+			v.MaterialVariant
+
+			if OreColors[mat] then
+
+				table.insert(ores, v)
+				table.insert(queue, v)
+
+			end
+
+		end
+
+	end
+
+	process()
+
+end
+
+--------------------------------------------------
+-- NEW ORE DETECT
+--------------------------------------------------
+
+workspace.DescendantAdded:Connect(function(v)
+
+	if not xrayEnabled then return end
+
+	if v:IsA("BasePart") then
+
+		local mat =
+		v.MaterialVariant
+
+		if OreColors[mat] then
+
+			table.insert(ores, v)
+			table.insert(queue, v)
+
+			process()
+
+		end
+
+	end
+
+end)
+
+--------------------------------------------------
+-- TOGGLE XRAY
+--------------------------------------------------
+
+Tab:CreateToggle({
+	Name = "Highlights Ores (BETA)",
+	CurrentValue = false,
+	Flag = "XrayOre",
+
+	Callback = function(Value)
+
+		xrayEnabled = Value
+
+		if Value then
+
+			scanWorld()
+
+		else
+
+			clearXray()
+
+		end
+
+	end,
+})
