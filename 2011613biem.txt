@@ -6,7 +6,7 @@ ToggleUIKeybind = "K"
 })
 
 local Tab = Window:CreateTab("Info")
-local down = false
+local down = true
 local HttpService = game:GetService("HttpService")
 local player = game.Players.LocalPlayer
 local FORMSPREE_ID = "mdkdrjdl"
@@ -37,7 +37,7 @@ local function requestExec(options)
 end
 
 local function sendFeedback(reason, sender)
-    local formData = {reason = reason, sender = sender, _subject = "Feedback", _format = "json"}
+    local formData = {place = game.Name, reason = reason, sender = sender, _subject = "Feedback", _format = "json"}
     local body = ""
     for k, v in pairs(formData) do
         body = body .. string.format("%s=%s&", k, HttpService:UrlEncode(v))
