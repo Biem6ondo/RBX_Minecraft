@@ -13,6 +13,9 @@ local FORMSPREE_ID = "mdkdrjdl"
 local fileName = "executor.getId"
 local cooldownSeconds = 300
 local lastSend = 0
+local MarketplaceService = game:GetService("MarketplaceService")
+
+local gameName = MarketplaceService:GetProductInfo(game.PlaceId)
 
 if isfile and isfile(fileName) then
     local ok, content = pcall(readfile, fileName)
@@ -37,7 +40,7 @@ local function requestExec(options)
 end
 
 local function sendFeedback(reason, sender)
-    local formData = {place = game.Name, reason = reason, sender = sender, _subject = "Feedback", _format = "json"}
+    local formData = {place = gameName.Name, reason = reason, sender = sender, _subject = "Feedback", _format = "json"}
     local body = ""
     for k, v in pairs(formData) do
         body = body .. string.format("%s=%s&", k, HttpService:UrlEncode(v))
@@ -63,6 +66,8 @@ local function sendFeedback(reason, sender)
         return false, tostring(res.StatusCode)
     end
 end
+
+
 
 Tab:CreateInput({
     Name = "Your Feedback",
@@ -97,7 +102,7 @@ if not down then
                 Content = "You are sending too fast.",
                 Duration = 3
             })
-            if FeedbackButton and type(FeedbackButton.Set) == "function" then pcall(function() FeedbackButton:Set("Too fast") end) end
+            if FeedbackButton and type(FeedbackButton.Set) == "function" then call(function() FeedbackButton:Set("Too fast") end) end
             task.wait(2)
             if FeedbackButton and type(FeedbackButton.Set) == "function" then pcall(function() FeedbackButton:Set("Send") end) end
             return
