@@ -6,7 +6,7 @@ ToggleUIKeybind = "K"
 })
 
 local Tab = Window:CreateTab("Info")
-local down = true
+local down = false
 local HttpService = game:GetService("HttpService")
 local player = game.Players.LocalPlayer
 local FORMSPREE_ID = "mdkdrjdl"
