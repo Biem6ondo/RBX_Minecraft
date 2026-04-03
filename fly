@@ -1,0 +1,261 @@
+--------------------------------------------------
+-- SERVICES
+--------------------------------------------------
+
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local LP = Players.LocalPlayer
+
+--------------------------------------------------
+-- CHARACTER FUNCTION
+--------------------------------------------------
+
+local function getChar()
+	return LP.Character or LP.CharacterAdded:Wait()
+end
+
+--------------------------------------------------
+-- VARIABLES
+--------------------------------------------------
+
+local flyActive = false
+local flySpeed = 50
+
+local bv
+local moveY = 0
+
+--------------------------------------------------
+-- MOBILE UI
+--------------------------------------------------
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FlyUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = game.CoreGui
+
+local function makeBtn(text,pos)
+
+	local b = Instance.new("TextButton")
+
+	b.Size = UDim2.new(0,60,0,60)
+	b.Position = pos
+
+	b.Text = text
+	b.TextScaled = true
+	b.BackgroundTransparency = 0.3
+
+	b.Parent = screenGui
+
+	return b
+
+end
+
+-- Toggle ở trên màn hình
+local toggleBtn = makeBtn(
+	"FLY",
+	UDim2.new(1,-70,0,20)
+)
+
+-- UP DOWN
+local upBtn = makeBtn(
+	"UP",
+	UDim2.new(1,-70,0.6,-60)
+)
+
+local downBtn = makeBtn(
+	"DOWN",
+	UDim2.new(1,-70,0.75,-60)
+)
+
+-- Ban đầu ẩn
+upBtn.Visible = false
+downBtn.Visible = false
+
+--------------------------------------------------
+-- START FLY
+--------------------------------------------------
+
+local function startFly()
+
+	local char = getChar()
+
+	local hrp = char:WaitForChild("HumanoidRootPart")
+
+	if bv then
+		bv:Destroy()
+	end
+
+	bv = Instance.new("BodyVelocity")
+
+	bv.MaxForce = Vector3.new(
+		1e5,
+		1e5,
+		1e5
+	)
+
+	bv.Velocity = Vector3.new(0,0,0)
+
+	bv.Parent = hrp
+
+	RunService:BindToRenderStep(
+		"FlyMove",
+		0,
+		function()
+
+			if not flyActive then
+				return
+			end
+
+			local char = getChar()
+
+			local moveDir =
+			char.Humanoid.MoveDirection
+
+			local velocity =
+			moveDir * flySpeed
+
+			velocity =
+			Vector3.new(
+				velocity.X,
+				moveY,
+				velocity.Z
+			)
+
+			if bv then
+				bv.Velocity = velocity
+			end
+
+		end
+	)
+
+end
+
+--------------------------------------------------
+-- STOP FLY
+--------------------------------------------------
+
+local function stopFly()
+
+	RunService:UnbindFromRenderStep(
+		"FlyMove"
+	)
+
+	if bv then
+		bv:Destroy()
+		bv = nil
+	end
+
+	moveY = 0
+
+end
+
+--------------------------------------------------
+-- MOBILE BUTTON CONTROL
+--------------------------------------------------
+
+toggleBtn.MouseButton1Click:Connect(function()
+
+	flyActive = not flyActive
+
+	if flyActive then
+
+		startFly()
+
+		-- Hiện nút bay
+		upBtn.Visible = true
+		downBtn.Visible = true
+
+	else
+
+		stopFly()
+
+		-- Ẩn nút bay
+		upBtn.Visible = false
+		downBtn.Visible = false
+
+	end
+
+end)
+
+-- UP
+upBtn.MouseButton1Down:Connect(function()
+	moveY = flySpeed
+end)
+
+upBtn.MouseButton1Up:Connect(function()
+	moveY = 0
+end)
+
+-- DOWN
+downBtn.MouseButton1Down:Connect(function()
+	moveY = -flySpeed
+end)
+
+downBtn.MouseButton1Up:Connect(function()
+	moveY = 0
+end)
+
+--------------------------------------------------
+-- PC CONTROL
+--------------------------------------------------
+
+UIS.InputBegan:Connect(function(input,gp)
+
+	if gp then return end
+
+	-- Toggle T
+	if input.KeyCode == Enum.KeyCode.T then
+
+		flyActive = not flyActive
+
+		if flyActive then
+
+			startFly()
+
+			upBtn.Visible = true
+			downBtn.Visible = true
+
+		else
+
+			stopFly()
+
+			upBtn.Visible = false
+			downBtn.Visible = false
+
+		end
+
+	end
+
+	-- Space = Up
+	if input.KeyCode == Enum.KeyCode.Space then
+
+		if flyActive then
+			moveY = flySpeed
+		end
+
+	end
+
+	-- Shift = Down
+	if input.KeyCode == Enum.KeyCode.LeftShift then
+
+		if flyActive then
+			moveY = -flySpeed
+		end
+
+	end
+
+end)
+
+UIS.InputEnded:Connect(function(input)
+
+	if input.KeyCode == Enum.KeyCode.Space then
+		moveY = 0
+	end
+
+	if input.KeyCode == Enum.KeyCode.LeftShift then
+		moveY = 0
+	end
+
+end)
