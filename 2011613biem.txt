@@ -1,4 +1,4 @@
-if not game.PlaceId == "72191005798957" then return warn("Wrong game") end
+if game.PlaceId == "72191005798957" then
 
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
@@ -852,3 +852,6 @@ Tab:CreateToggle({
 
 	end,
 })
+else
+warn("wrong game")
+end
