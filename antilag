@@ -2,126 +2,97 @@ local map = workspace:WaitForChild("Map")
 local drops = workspace:FindFirstChild("Drops")
 
 local leafTypes = {
-    jungle_leaves = true,
-    oak_leaves = true,
-    acacia_leaves = true,
-    birch_leaves = true,
-    dark_oak_leaves = true,
-    spruce_leaves = true,
+	jungle_leaves = true,
+	oak_leaves = true,
+	acacia_leaves = true,
+	birch_leaves = true,
+	dark_oak_leaves = true,
+	spruce_leaves = true,
 }
 
 local effectClasses = {
-    ParticleEmitter = true,
-    Trail = true,
-    Smoke = true,
-    Fire = true,
-    Sparkles = true,
-    Explosion = true,
-    Beam = true,
-    Highlight = true,
-    PointLight = true,
-    SpotLight = true,
-    SurfaceLight = true,
+	ParticleEmitter = true,
+	Trail = true,
+	Smoke = true,
+	Fire = true,
+	Sparkles = true,
+	Explosion = true,
+	Beam = true,
+	Highlight = true,
+	PointLight = true,
+	SpotLight = true,
+	SurfaceLight = true,
 }
 
-for _, v in ipairs(workspace:GetDescendants()) do
-    if effectClasses[v.ClassName] then
-        v:Destroy()
-    end
+local function handle(v)
+	task.defer(function()
+		if not v or not v.Parent then return end
+
+		if effectClasses[v.ClassName] then
+			v:Destroy()
+			return
+		end
+
+		if v.Name == "WaterFacePrototype" then
+			local p = v.Parent
+			v:Destroy()
+
+			if p and p:IsA("BasePart") then
+				p.Transparency = 0.5
+				p.Color = Color3.fromRGB(0,170,255)
+				p.Material = Enum.Material.SmoothPlastic
+			end
+			return
+		end
+
+		if v:IsDescendantOf(map) then
+			if v:IsA("Model") then
+				if v:GetAttribute("lod") ~= nil then
+					v:Destroy()
+				end
+				return
+			end
+
+			if v:IsA("BasePart") then
+				local mv = v.MaterialVariant
+				if mv and leafTypes[mv] then
+					if v.Transparency ~= 0 then
+						v.Transparency = 0
+					end
+				end
+			end
+		end
+
+		if drops and v:IsDescendantOf(drops) then
+			if v:IsA("Script") and v.Name == "ClientScript" then
+				task.delay(1.5,function()
+					if v and v.Parent then
+						v:Destroy()
+					end
+				end)
+				return
+			end
+
+			if v:IsA("Model") and v.Name == "Drop" then
+				local cg = v:FindFirstChild("ClientGeometry")
+
+				if cg then
+					for _,obj in ipairs(cg:GetChildren()) do
+						if obj:IsA("BasePart") and obj.Name == "Part" then
+							local bottom = obj:FindFirstChild("Bottom")
+							if bottom then
+								bottom:Destroy()
+							end
+						end
+					end
+				end
+			end
+		end
+	end)
 end
 
-workspace.DescendantAdded:Connect(function(v)
-    if effectClasses[v.ClassName] then
-        v:Destroy()
-    end
-end)
-
-local queue = {}
-local processing = false
-
-local function handleMap(v)
-    if not v then return end
-
-    if v:IsA("Model") then
-        if v:GetAttribute("lod") ~= nil then
-            v:Destroy()
-        end
-        return
-    end
-
-    if v:IsA("BasePart") then
-        local mv = v.MaterialVariant
-        if mv and leafTypes[mv] then
-            if v.Transparency ~= 0 then
-                v.Transparency = 0
-            end
-        end
-    end
+for _,v in ipairs(workspace:GetDescendants()) do
+	handle(v)
 end
 
-local function handleDrops(v)
-    if not v then return end
-
-    if v:IsA("Script") and v.Name == "ClientScript" then
-        task.delay(1.5, function()
-            if v then
-                v:Destroy()
-            end
-        end)
-        return
-    end
-
-    if v:IsA("Model") and v.Name == "Drop" then
-        local cg = v:FindFirstChild("ClientGeometry")
-
-        if cg then
-            for _, obj in ipairs(cg:GetChildren()) do
-                if obj:IsA("BasePart") and obj.Name == "Part" then
-                    local bottom = obj:FindFirstChild("Bottom")
-                    if bottom then
-                        bottom:Destroy()
-                    end
-                end
-            end
-        end
-    end
-end
-
-local function processQueue()
-    if processing then return end
-    processing = true
-
-    while #queue > 0 do
-        local batchSize = math.min(150, #queue)
-
-        for i = 1, batchSize do
-            local v = table.remove(queue, 1)
-
-            handleMap(v)
-            handleDrops(v)
-        end
-
-        task.wait()
-    end
-
-    processing = false
-end
-
-local function enqueue(v)
-    table.insert(queue, v)
-    task.defer(processQueue)
-end
-
-for _, v in ipairs(map:GetDescendants()) do
-    enqueue(v)
-end
-
-map.DescendantAdded:Connect(enqueue)
-
-if drops then
-    for _, v in ipairs(drops:GetDescendants()) do
-        enqueue(v)
-    end
-
-    drops.DescendantAdded:Connect(enqueue)
-end
+workspace.DescendantAdded:Connect(handle)
