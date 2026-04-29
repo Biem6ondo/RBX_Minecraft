@@ -3204,7 +3204,7 @@ BetaTab:CreateToggle({
 	end,
 })
 
-Tab:CreateInput({
+BetaTab:CreateInput({
 	Name = "Chest Distance",
 	CurrentValue = "140",
 	PlaceholderText = "Distance",
