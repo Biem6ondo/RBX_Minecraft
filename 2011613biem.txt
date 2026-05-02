@@ -1550,6 +1550,7 @@ end)
 --------------------------------------------------
 -- Break Radius
 --------------------------------------------------
+pcall(function()
 MineTab:CreateSection("🔥 | Hole")
 local breakRadius = 1
 local optimization = false
@@ -1980,6 +1981,7 @@ MineTab:CreateInput({
 
 	end
 })
+end)
 
 MineTab:CreateToggle({
 	Name = "_testing_function",
