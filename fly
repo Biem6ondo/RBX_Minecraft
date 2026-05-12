@@ -1,86 +1,89 @@
---------------------------------------------------
--- SERVICES
---------------------------------------------------
-
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
 local LP = Players.LocalPlayer
 
---------------------------------------------------
--- CHARACTER FUNCTION
---------------------------------------------------
-
 local function getChar()
 	return LP.Character or LP.CharacterAdded:Wait()
 end
 
---------------------------------------------------
--- VARIABLES
---------------------------------------------------
-
 local flyActive = false
-local flySpeed = 50
-
 local bv
 local moveY = 0
 
---------------------------------------------------
--- MOBILE UI
---------------------------------------------------
+local isPC = UIS.KeyboardEnabled and UIS.MouseEnabled
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FlyUI"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = game.CoreGui
 
-local function makeBtn(text,pos)
-
+local function makeBtn(text, pos)
 	local b = Instance.new("TextButton")
-
-	b.Size = UDim2.new(0,60,0,60)
+	b.Size = UDim2.new(0, 60, 0, 60)
 	b.Position = pos
-
 	b.Text = text
 	b.TextScaled = true
 	b.BackgroundTransparency = 0.3
-
 	b.Parent = screenGui
-
 	return b
-
 end
 
--- Toggle ở trên màn hình
-local toggleBtn = makeBtn(
-	"FLY",
-	UDim2.new(1,-70,0,20)
-)
+local function makeText(text, pos)
+	local t = Instance.new("TextLabel")
+	t.Size = UDim2.new(0, 140, 0, 60)
+	t.Position = pos
+	t.BackgroundTransparency = 1
+	t.Text = text
+	t.TextScaled = true
+	t.TextColor3 = Color3.new(1,1,1)
+	t.TextStrokeTransparency = 0
+	t.Font = Enum.Font.SourceSansBold
+	t.Parent = screenGui
+	return t
+end
 
--- UP DOWN
-local upBtn = makeBtn(
-	"UP",
-	UDim2.new(1,-70,0.6,-60)
-)
+local toggleBtn
+local upBtn
+local downBtn
+local pcText
 
-local downBtn = makeBtn(
-	"DOWN",
-	UDim2.new(1,-70,0.75,-60)
-)
+if not isPC then
+	toggleBtn = makeBtn(
+		"FLY",
+		UDim2.new(1,-70,0,20)
+	)
 
--- Ban đầu ẩn
-upBtn.Visible = false
-downBtn.Visible = false
+	upBtn = makeBtn(
+		"UP",
+		UDim2.new(1,-70,0.6,-60)
+	)
 
---------------------------------------------------
--- START FLY
---------------------------------------------------
+	downBtn = makeBtn(
+		"DOWN",
+		UDim2.new(1,-70,0.75,-60)
+	)
+
+	upBtn.Visible = false
+	downBtn.Visible = false
+else
+	pcText = makeText(
+		"UP\n(Space) | DOWN\n(Left Shift)\nTOGGLE (P)",
+		UDim2.new(1,-170,0,20)
+	)
+
+	pcText.Visible = false
+end
+
+local function getSpeed()
+	local char = getChar()
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	return hum and hum.WalkSpeed or 16
+end
 
 local function startFly()
-
 	local char = getChar()
-
 	local hrp = char:WaitForChild("HumanoidRootPart")
 
 	if bv then
@@ -88,59 +91,33 @@ local function startFly()
 	end
 
 	bv = Instance.new("BodyVelocity")
-
-	bv.MaxForce = Vector3.new(
-		1e5,
-		1e5,
-		1e5
-	)
-
-	bv.Velocity = Vector3.new(0,0,0)
-
+	bv.MaxForce = Vector3.new(1e5,1e5,1e5)
+	bv.Velocity = Vector3.zero
 	bv.Parent = hrp
 
-	RunService:BindToRenderStep(
-		"FlyMove",
-		0,
-		function()
+	RunService:BindToRenderStep("FlyMove", 0, function()
+		if not flyActive then return end
 
-			if not flyActive then
-				return
-			end
+		local char = getChar()
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if not hum then return end
 
-			local char = getChar()
+		local flySpeed = hum.WalkSpeed
+		local moveDir = hum.MoveDirection
+		local velocity = moveDir * flySpeed
 
-			local moveDir =
-			char.Humanoid.MoveDirection
-
-			local velocity =
-			moveDir * flySpeed
-
-			velocity =
-			Vector3.new(
+		if bv then
+			bv.Velocity = Vector3.new(
 				velocity.X,
 				moveY,
 				velocity.Z
 			)
-
-			if bv then
-				bv.Velocity = velocity
-			end
-
 		end
-	)
-
+	end)
 end
 
---------------------------------------------------
--- STOP FLY
---------------------------------------------------
-
 local function stopFly()
-
-	RunService:UnbindFromRenderStep(
-		"FlyMove"
-	)
+	RunService:UnbindFromRenderStep("FlyMove")
 
 	if bv then
 		bv:Destroy()
@@ -148,114 +125,75 @@ local function stopFly()
 	end
 
 	moveY = 0
-
 end
 
---------------------------------------------------
--- MOBILE BUTTON CONTROL
---------------------------------------------------
-
-toggleBtn.MouseButton1Click:Connect(function()
-
+local function toggleFly()
 	flyActive = not flyActive
 
 	if flyActive then
-
 		startFly()
 
-		-- Hiện nút bay
-		upBtn.Visible = true
-		downBtn.Visible = true
-
-	else
-
-		stopFly()
-
-		-- Ẩn nút bay
-		upBtn.Visible = false
-		downBtn.Visible = false
-
-	end
-
-end)
-
--- UP
-upBtn.MouseButton1Down:Connect(function()
-	moveY = flySpeed
-end)
-
-upBtn.MouseButton1Up:Connect(function()
-	moveY = 0
-end)
-
--- DOWN
-downBtn.MouseButton1Down:Connect(function()
-	moveY = -flySpeed
-end)
-
-downBtn.MouseButton1Up:Connect(function()
-	moveY = 0
-end)
-
---------------------------------------------------
--- PC CONTROL
---------------------------------------------------
-
-UIS.InputBegan:Connect(function(input,gp)
-
-	if gp then return end
-
-	-- Toggle T
-	if input.KeyCode == Enum.KeyCode.T then
-
-		flyActive = not flyActive
-
-		if flyActive then
-
-			startFly()
-
+		if upBtn then
 			upBtn.Visible = true
 			downBtn.Visible = true
+		end
 
-		else
+		if pcText then
+			pcText.Visible = true
+		end
+	else
+		stopFly()
 
-			stopFly()
-
+		if upBtn then
 			upBtn.Visible = false
 			downBtn.Visible = false
-
 		end
 
+		if pcText then
+			pcText.Visible = false
+		end
+	end
+end
+
+if toggleBtn then
+	toggleBtn.MouseButton1Click:Connect(toggleFly)
+
+	upBtn.MouseButton1Down:Connect(function()
+		moveY = getSpeed()
+	end)
+
+	upBtn.MouseButton1Up:Connect(function()
+		moveY = 0
+	end)
+
+	downBtn.MouseButton1Down:Connect(function()
+		moveY = -getSpeed()
+	end)
+
+	downBtn.MouseButton1Up:Connect(function()
+		moveY = 0
+	end)
+end
+
+UIS.InputBegan:Connect(function(input)
+	if input.KeyCode == Enum.KeyCode.P then
+		toggleFly()
 	end
 
-	-- Space = Up
+	if not flyActive then return end
+
 	if input.KeyCode == Enum.KeyCode.Space then
-
-		if flyActive then
-			moveY = flySpeed
-		end
-
+		moveY = getSpeed()
 	end
 
-	-- Shift = Down
 	if input.KeyCode == Enum.KeyCode.LeftShift then
-
-		if flyActive then
-			moveY = -flySpeed
-		end
-
+		moveY = -getSpeed()
 	end
-
 end)
 
 UIS.InputEnded:Connect(function(input)
-
-	if input.KeyCode == Enum.KeyCode.Space then
+	if input.KeyCode == Enum.KeyCode.Space
+	or input.KeyCode == Enum.KeyCode.LeftShift then
 		moveY = 0
 	end
-
-	if input.KeyCode == Enum.KeyCode.LeftShift then
-		moveY = 0
-	end
-
 end)
