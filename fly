@@ -102,7 +102,7 @@ local function startFly()
 		local hum = char:FindFirstChildOfClass("Humanoid")
 		if not hum then return end
 
-		local flySpeed = hum.WalkSpeed
+		local flySpeed = math.clamp(hum.WalkSpeed, 50, math.huge)
 		local moveDir = hum.MoveDirection
 		local velocity = moveDir * flySpeed
 
