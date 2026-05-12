@@ -79,7 +79,7 @@ end
 local function getSpeed()
 	local char = getChar()
 	local hum = char:FindFirstChildOfClass("Humanoid")
-	return hum and hum.WalkSpeed or 16
+	return hum and math.clamp(hum.WalkSpeed, 50, math.huge) or 16
 end
 
 local function startFly()
@@ -103,6 +103,7 @@ local function startFly()
 		if not hum then return end
 
 		local flySpeed = math.clamp(hum.WalkSpeed, 50, math.huge)
+
 		local moveDir = hum.MoveDirection
 		local velocity = moveDir * flySpeed
 
